@@ -222,6 +222,11 @@ class GameApp(App):
                     # guessed only letter
                     elif GameApp.lst_current_buttons[i].text in GameApp.word_to_guess:
                         self.lst_cells[i].background_color = [1, 1, 0, 1]
+                        self.lst_current_buttons[i].background_color = [1, 1, 0, 1]
+
+                    #guessed no letter
+                    else:
+                        self.lst_current_buttons[i].background_color = [0,0,0,1]
 
                 # guessed word
                 if self.count_guessed_letters == 5:
