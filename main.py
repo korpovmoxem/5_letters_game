@@ -1,20 +1,23 @@
 import os
 import sys
 
+from kivy.config import Config
+Config.set('graphics', 'resizable', '1')
+Config.set('graphics', 'width', '500')
+Config.set('graphics', 'height', '700')
 from kivy.app import App
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.button import Button
-from kivy.config import Config
+from kivy.uix.textinput import TextInput
+from kivy.uix.popup import Popup
 from kivy.uix.label import Label
 from kivy.uix.widget import Widget
-from kivy.uix.textinput import TextInput
+from kivy.lang import Builder
 from random import choice
+from random import random
 
 
-Config.set('graphics', 'resizable', '1')
-Config.set('graphics', 'width', '500')
-Config.set('graphics', 'height', '500')
 
 lst_words = ['Абрис', 'Акула', 'Аминь', 'Арест', 'Афиша', 'Автор', 'Алкаш', 'Анонс', 'Архив', 'Адрес', 'Алтын', 'Апчхи',
              'Астра', 'Абрек', 'Актив', 'Амеба', 'Арена', 'Афера', 'Автол', 'Алиби', 'Ангел', 'Архар', 'Адепт', 'Алмаз',
@@ -189,57 +192,161 @@ lst_words = ['Абрис', 'Акула', 'Аминь', 'Арест', 'Афиша
              'Ягуар', 'Яичко', 'Якобы', 'Якорь', 'Якуты', 'Ямина', 'Ямщик', 'Яркий', 'Ярлык', 'Ярыга', 'Ясень', 'Ясный',
              'Яство', 'Ястык', 'Яхонт', 'Юноша', 'Юниор', 'Юрист']
 
+
 class GameApp(App):
 
 
-    word_count = 0
-    word_to_guess = [i.upper() for i in choice(lst_words)]
-    lst_current_buttons = []
+    word_count = 0  # count of letters in try
+
+    word_to_guess = [i.upper() for i in choice(lst_words)]  # create word to guess
+
+    lst_current_buttons = []    # history of pressed buttons in try
+
+    global_lst_cells = []   # history of used windows at whole game
+
+    try_word = []   # guessed letters. need to check being guessed word in dictionary
+
     print(word_to_guess)
 
-    def change_window_letter(self, button):
 
-        if button.text == 'New':
-            pass
+    def popup_reaction(self, popup_button):
 
-        elif button.text == '<':
+        if popup_button.text == 'Да, хочу новую':
+            GameApp.word_to_guess = [i.upper() for i in choice(lst_words)]  # create new word to guess
+            GameApp.lst_current_buttons = []    # clear history of pressed button at last game
+            GameApp.word_count = 0  # clear count of letters at last game
+
+            # clear all windows
+            for cell in GameApp.global_lst_cells:
+                cell.text = ''
+                cell.background_color = (1, 1, 1, 1)
+            self.word_window1_cell1.text = '' # idk after clear cycle first window is not clear
+            self.word_window1_cell1.background_color = (1, 1, 1, 1) # same
+
+            # make all letter buttons white
+            for but in self.lst_buttons:
+                but.background_color = (1, 1, 1, 1)
+
+            # init list of windows
+            self.lst_cells = [self.word_window1_cell1, self.word_window1_cell2, self.word_window1_cell3,
+                              self.word_window1_cell4,
+                              self.word_window1_cell5, self.word_window2_cell1, self.word_window2_cell2,
+                              self.word_window2_cell3,
+                              self.word_window2_cell4, self.word_window2_cell5, self.word_window3_cell1,
+                              self.word_window3_cell2,
+                              self.word_window3_cell3, self.word_window3_cell4, self.word_window3_cell5,
+                              self.word_window4_cell1,
+                              self.word_window4_cell2, self.word_window4_cell3, self.word_window4_cell4,
+                              self.word_window4_cell5,
+                              self.word_window5_cell1, self.word_window5_cell2, self.word_window5_cell3,
+                              self.word_window5_cell4,
+                              self.word_window5_cell5]
+            self.popup.dismiss()
+
+
+    def change_window_letter(self, button): # pressed buttons reaction
+
+        if button.text == 'New':    # start new game
+
+            # create popup window
+            popup_box = BoxLayout(orientation='vertical', padding=10)
+            popup_box.add_widget(Label(text='Хочешь начать новую игру?', font_size=17))
+            self.popup = Popup(title='Новая игра', title_size=30, title_align='center', content=popup_box,
+                          size_hint=(None, None),
+                          size=(300, 300), auto_dismiss=False,
+                          background_color=(random(), random(), random(), 0.8))
+            button_yes = Button(text='Да, хочу новую', background_color=(1, 0, 0, 1), on_press=self.popup_reaction)
+            button_no = Button(text='Нет, продолжаем', background_color=(0, 1, 0, 1), on_press=self.popup.dismiss)
+            popup_box.add_widget(button_yes)
+            popup_box.add_widget(button_no)
+            self.popup.open()
+
+        elif button.text == '<':    # pressed back button (delete last letter)
             if GameApp.word_count > 0:
                 GameApp.word_count -= 1
                 del GameApp.lst_current_buttons[-1]
                 self.lst_cells[GameApp.word_count].text = ''
+                del GameApp.global_lst_cells[-1]
+                del GameApp.try_word[-1]
 
-        elif button.text == '>':
-            if GameApp.word_count == 5:
-                self.count_guessed_letters = 0
-                for i in range(5):
+        elif button.text == '>':    # push word to check right letters
 
-                    # guessed letter and position
-                    if GameApp.lst_current_buttons[i].text == GameApp.word_to_guess[i]:
-                        self.lst_cells[i].background_color = [0,1,0,1]
-                        self.lst_current_buttons[i].background_color = [0,1,0,1]
-                        self.count_guessed_letters += 1
+            if GameApp.word_count == 5:    # check number of letters
 
+<<<<<<< Updated upstream
                     # guessed only letter
                     elif GameApp.lst_current_buttons[i].text in GameApp.word_to_guess:
                         self.lst_cells[i].background_color = [1, 1, 0, 1]
+=======
+                if ''.join(GameApp.try_word).capitalize() in lst_words:  # check word in dictionary
 
-                # guessed word
-                if self.count_guessed_letters == 5:
-                    print('Ура')
+                    self.count_guessed_letters = 0
+>>>>>>> Stashed changes
 
-                # clear counter and lists
-                del self.lst_cells[:5]
-                GameApp.word_count = 0
-                GameApp.lst_current_buttons = []
+                    for i in range(5):  # check every letter
+
+                        # guessed letter and position
+                        if GameApp.lst_current_buttons[i].text == GameApp.word_to_guess[i]:
+                            self.lst_cells[i].background_color = [0,1,0,1]
+                            self.lst_current_buttons[i].background_color = [0,1,0,1]
+                            self.count_guessed_letters += 1
+
+                        # guessed only letter
+                        elif GameApp.lst_current_buttons[i].text in GameApp.word_to_guess:
+                            self.lst_cells[i].background_color = [1, 1, 0, 1]
+                            self.lst_current_buttons[i].background_color = [1, 1, 0, 1]
+
+                        # guessed no letter
+                        else:
+                            self.lst_current_buttons[i].background_color = [0,0,0,1]
+
+                        GameApp.try_word = []
+
+                    # guessed word
+                    if self.count_guessed_letters == 5:
+
+                        # create popup
+                        popup_box = BoxLayout(orientation='vertical', padding=10)
+                        popup_box.add_widget(Label(text=f'Тебе удалось угадать слово \n{"".join(GameApp.word_to_guess).capitalize()}\n'
+                                                        f''
+                                                        f'Начать новую игру?', font_size=17))
+                        self.popup = Popup(title='Ура!', title_size=15,
+                                           title_align='center', content=popup_box,
+                                           size_hint=(None, None),
+                                           size=(300, 300), auto_dismiss=False,
+                                           background_color=(random(), random(), random(), 0.8))
+                        button_yes = Button(text='Да, хочу новую', background_color=(0, 1, 0, 1),
+                                            on_press=self.popup.dismiss)
+                        button_no = Button(text='Нет, надоело', background_color=(1, 0, 0, 1),
+                                           on_press=self.popup.dismiss)
+                        popup_box.add_widget(button_yes)
+                        popup_box.add_widget(button_no)
+                        self.popup.open()
+
+                    # clear counter and lists
+                    del self.lst_cells[:5]
+                    GameApp.word_count = 0
+                    GameApp.lst_current_buttons = []
+
+                    # was last try
+                    if len(GameApp.global_lst_cells) == 25:
+                        
+                        # create popup
+                        pass
+
 
         # write letter to window
         elif GameApp.word_count != 5:
             self.lst_cells[GameApp.word_count].text = button.text
             GameApp.word_count += 1
             GameApp.lst_current_buttons.append(button)
+            GameApp.global_lst_cells.append(self.lst_cells[GameApp.word_count])
+            GameApp.try_word.append(button.text)
 
 
     def build(self):
+
+        # create game field
         root = BoxLayout(orientation='vertical', padding=5)
 
         # 1 answer window
@@ -333,7 +440,7 @@ class GameApp(App):
                      self.word_window5_cell5]
 
 
-        # init buttons
+        # create buttons
         self.allButtons = GridLayout(cols=12)
 
         self.button_1 = Button(text='Й', background_color=[1,1,1,1], on_press=self.change_window_letter)
@@ -372,6 +479,13 @@ class GameApp(App):
         self.button_enter = Button(text='>', background_color=[0, 0, 1, 1], on_press=self.change_window_letter)
         self.button_newgame = Button(text='New', background_color=[0, 1, 1, 1], on_press=self.change_window_letter)
 
+        self.lst_buttons = [self.button_1, self.button_2, self.button_3, self.button_4, self.button_5, self.button_6,
+                            self.button_7, self.button_8, self.button_9, self.button_10, self.button_11, self.button_12,
+                            self.button_13, self.button_14, self.button_15, self.button_16, self.button_17,
+                            self.button_18, self.button_19, self.button_20, self.button_21, self.button_22,
+                            self.button_23, self.button_24, self.button_25, self.button_26, self.button_27,
+                            self.button_28, self.button_29, self.button_30, self.button_31, self.button_32]
+
 
         self.allButtons.add_widget(self.button_1)
         self.allButtons.add_widget(self.button_2)
@@ -409,7 +523,6 @@ class GameApp(App):
         self.allButtons.add_widget(self.button_enter)
         self.allButtons.add_widget(self.button_newgame)
 
-
         root.add_widget(self.allButtons)
 
         return root
@@ -417,9 +530,6 @@ class GameApp(App):
 
 if __name__ == '__main__':
     GameApp().run()
-
-
-
 
 
 
