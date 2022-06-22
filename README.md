@@ -6,4 +6,4 @@
 (Example of a game)
 ![image](https://user-images.githubusercontent.com/105490028/175045959-cc188123-9dfe-4966-9c79-48639a92905b.png)
 
-# The game is only available in russian language
+The game is only available in russian language
